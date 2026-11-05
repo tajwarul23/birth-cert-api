@@ -61,7 +61,7 @@ export const otps = pgTable("otps", {
   codeHash: text("code_hash").notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   attempts: integer("attempts").notNull().default(0),
-  createdAt: timestamp("created_at)", { withTimezone: true })
+  createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
 });
@@ -102,7 +102,7 @@ export const correctionItems = pgTable("correction_items", {
   applicationId: uuid("application_id")
     .notNull()
     .references(() => applications.id, { onDelete: "cascade" }),
-  filed: varchar("field", { length: 50 }).notNull(),
+  field: varchar("field", { length: 50 }).notNull(),
   oldValue: text("old_value").notNull(),
   newValue: text("new_value").notNull(),
 });
@@ -111,7 +111,7 @@ export const correctionItems = pgTable("correction_items", {
 /**-------------DOCUMENTS (file details, file lives on cloudinary)--------------- */
 export const documents = pgTable("documents", {
     id: uuid("id").primaryKey().defaultRandom(),
-    applicationId: uuid("id").notNull().references(()=>applications.id, {onDelete:"cascade"}),
+    applicationId: uuid("application_id").notNull().references(()=>applications.id, {onDelete:"cascade"}),
     docType: docTypeEnum("doc_type").notNull(),
     fileUrl: text("file_url").notNull(),
     publicId: text("public_id").notNull(),
