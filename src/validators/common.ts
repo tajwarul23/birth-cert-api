@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const phoneSchema = z
   .string()
-  .regex(/^\+8801\d{9}$/, "Phone must look like +8801XXXXXXXXX");
+  .regex(/^\+8801[3-9]\d{8}$/, "Phone must look like +8801XXXXXXXXX");
 
 export const passwordSchema = z
   .string()
