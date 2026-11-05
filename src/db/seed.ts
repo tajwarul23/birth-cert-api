@@ -24,7 +24,6 @@ const main = async()=>{
             phone:SEED_OPERATOR_PHONE,
             passwordHash,
             role:"operator",
-            phoneVerified:true
         }).onConflictDoNothing();
         console.log(`Operator ready : ${SEED_OPERATOR_PHONE}`);
         process.exit(0);

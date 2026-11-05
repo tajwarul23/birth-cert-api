@@ -1,6 +1,5 @@
 import { date } from "drizzle-orm/pg-core";
 import { varchar } from "drizzle-orm/pg-core";
-import { boolean } from "drizzle-orm/pg-core";
 import { integer } from "drizzle-orm/pg-core";
 import { index } from "drizzle-orm/pg-core";
 import { jsonb } from "drizzle-orm/pg-core";
@@ -9,6 +8,7 @@ import { text } from "drizzle-orm/pg-core";
 import { uuid } from "drizzle-orm/pg-core";
 import { pgTable } from "drizzle-orm/pg-core";
 import { pgEnum } from "drizzle-orm/pg-core";
+
 
 /**-----------ENUMS----------------------- */
 export const roleEnum = pgEnum("role", ["citizen", "operator"]);
@@ -41,11 +41,10 @@ export const nidRegistry = pgTable("nid_registry", {
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 100 }).notNull(),
-  phone: varchar("phone", { length: 15 }).notNull(),
+  phone: varchar("phone", { length: 15 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   nidHash: text("nid_hash").unique(),
   role: roleEnum("role").notNull().default("citizen"),
-  phoneVerified: boolean("phone_verified").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -54,10 +53,10 @@ export const users = pgTable("users", {
 /**-----------------OTPs------------------- */
 export const otps = pgTable("otps", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
-    .notNull()
-    .unique()
-    .references(() => users.id, { onDelete: "cascade" }),
+  nidHash: text("nid_hash").notNull().unique(),
+  name: varchar("name", { length: 100 }).notNull(),
+  phone: varchar("phone", { length: 15 }).notNull(),
+  passwordHash: text("password_hash").notNull(),
   codeHash: text("code_hash").notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   attempts: integer("attempts").notNull().default(0),
@@ -107,28 +106,54 @@ export const correctionItems = pgTable("correction_items", {
   newValue: text("new_value").notNull(),
 });
 
-
 /**-------------DOCUMENTS (file details, file lives on cloudinary)--------------- */
 export const documents = pgTable("documents", {
-    id: uuid("id").primaryKey().defaultRandom(),
-    applicationId: uuid("application_id").notNull().references(()=>applications.id, {onDelete:"cascade"}),
-    docType: docTypeEnum("doc_type").notNull(),
-    fileUrl: text("file_url").notNull(),
-    publicId: text("public_id").notNull(),
-    createdAt: timestamp("created_at", {withTimezone:true}).notNull().defaultNow()
+  id: uuid("id").primaryKey().defaultRandom(),
+  applicationId: uuid("application_id")
+    .notNull()
+    .references(() => applications.id, { onDelete: "cascade" }),
+  docType: docTypeEnum("doc_type").notNull(),
+  fileUrl: text("file_url").notNull(),
+  publicId: text("public_id").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 /**-------------------STATUS LOGS (with full history)------------ */
 export const statusLogs = pgTable("status_logs", {
-    id: uuid("id").primaryKey().defaultRandom(),
-    applicationId: uuid("application_id").notNull().references(()=>applications.id, {onDelete:"cascade"}),
-    oldStatus: applicationStatusEnum("old_status"),
-    newStatus: applicationStatusEnum("new_status").notNull(),
-    changedBy:uuid("changed_by").notNull().references(()=>users.id, {onDelete:"restrict"}),
-    note: text("note"),
-    createdAt: timestamp("created_at", {withTimezone:true}).notNull().defaultNow()
-})
+  id: uuid("id").primaryKey().defaultRandom(),
+  applicationId: uuid("application_id")
+    .notNull()
+    .references(() => applications.id, { onDelete: "cascade" }),
+  oldStatus: applicationStatusEnum("old_status"),
+  newStatus: applicationStatusEnum("new_status").notNull(),
+  changedBy: uuid("changed_by")
+    .notNull()
+    .references(() => users.id, { onDelete: "restrict" }),
+  note: text("note"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
 
+/**--------------------------REFRESH TOKENS--------------- */
+export const refreshTokens = pgTable(
+  "refresh_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull().unique(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("refresh_tokens_user_id_idx").on(table.userId)],
+);
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Application = typeof applications.$inferSelect;

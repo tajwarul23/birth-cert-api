@@ -15,6 +15,20 @@
       "when": 1793853057260,
       "tag": "0001_optimal_moondragon",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793882812242,
+      "tag": "0002_silent_union_jack",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793889031724,
+      "tag": "0003_optimal_omega_flight",
+      "breakpoints": true
     }
   ]
 }
