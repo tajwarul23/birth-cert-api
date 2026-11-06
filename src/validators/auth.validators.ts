@@ -27,7 +27,7 @@ export const registerSchema = z.object({
 });
 
 export const verifyOtpSchema = z.object({
-  code: z.string().regex(/^\d{6}$/, "Code must be 6 digits"),
+  otp: z.string().regex(/^\d{6}$/, "Code must be 6 digits"),
 });
 
 export const loginSchema = z.object({

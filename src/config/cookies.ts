@@ -13,18 +13,18 @@ const base: CookieOptions = {
   sameSite: "strict",
 };
 
-export const verificationCookie: CookieOptions = {
+export const verificationCookieOption: CookieOptions = {
   ...base,
   path: "/api/auth",
   maxAge: env.VERIFICATION_TOKEN_MINUTES * 60 * 1000,
 };
 
-export const accessCookie: CookieOptions = {
+export const accessCookieOption: CookieOptions = {
     ...base,
     path: "/",
     maxAge:env.ACCESS_TOKEN_MINUTES * 60 * 1000,
 };
-export const refreshCookie: CookieOptions = {
+export const refreshCookieOption: CookieOptions = {
     ...base,
     path: "/api/auth",
     maxAge:env.REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000,

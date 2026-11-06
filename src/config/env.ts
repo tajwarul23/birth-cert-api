@@ -12,6 +12,9 @@ const envSchema = z.object({
   ACCESS_TOKEN_MINUTES: z.coerce.number().int().positive().default(10),
   REFRESH_TOKEN_DAYS: z.coerce.number().int().positive().default(7),
   VERIFICATION_TOKEN_MINUTES: z.coerce.number().int().positive().default(5),
+  OTP_EXPIRY_MINUTES: z.coerce.number().int().positive().default(5),
+  OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
+  OTP_RESEND_COOLDOWN_SECONDS: z.coerce.number().int().positive().default(60),
 });
 
 export const env = envSchema.parse(process.env);
