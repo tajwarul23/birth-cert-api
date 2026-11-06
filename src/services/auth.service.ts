@@ -314,3 +314,20 @@ export const refresh = async (oldToken?: string) => {
   const accessToken = signAccessToken({ sub: user.id, role: user.role });
   return { accessToken, refreshToken: newToken, expiresAt: row.expiresAt };
 };
+
+/**
+ * @name getMe
+ * @description get the logged in user's info
+ * @access private only logged in user
+ */
+
+// auth.service.ts
+export const getMe = async (userId: string) => {
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+    columns: { id: true, name: true, phone: true, role: true },
+  });
+  if (!user) throw new AppError(404, "User not found");
+  return user;
+};
+

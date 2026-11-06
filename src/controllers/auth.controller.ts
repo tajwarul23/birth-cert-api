@@ -121,3 +121,9 @@ export const refresh = async (req: Request, res: Response) => {
     throw err;
   }
 };
+
+// GET /api/auth/me
+export const getMe = async (req: Request, res: Response) => {
+  const user = await authService.getMe(req.user!.id);
+  res.status(200).json({ success: true, data: { user } });
+};
