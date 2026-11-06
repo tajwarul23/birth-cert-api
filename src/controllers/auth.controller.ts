@@ -82,6 +82,12 @@ export const resendOtp = async (req: Request, res: Response) => {
 
 // POST /api/auth/login
 export const login = async(req: Request, res: Response) =>{
-    const input: LoginInput = req.body;
+    const {user, accessToken, refreshToken} = await authService.login(req.body);
+    setAuthCookies(res, accessToken, refreshToken);
+    res.status(200).json({
+        success:true,
+        message:`Welcome ${user.name}`,
+        data: {user}
+    });
 
 }

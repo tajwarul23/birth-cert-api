@@ -2,7 +2,7 @@ import { and, eq, or, sql, lt } from "drizzle-orm";
 import { env, isProduction } from "../config/env";
 import { db } from "../db";
 import { nidRegistry, otps, refreshTokens, users } from "../db/schema";
-import { hashPassword, hmac, safeEqual, sha256 } from "../utils/hash";
+import { comparePassword, hashPassword, hmac, safeEqual, sha256 } from "../utils/hash";
 import {
   generateRefreshToken,
   refreshTokenExpiryDate,
@@ -238,16 +238,25 @@ export const resendOtp = async (verificationId: string) => {
  * @description Authenticates a registered user using their credentials and generates new access and refresh tokens.
  * @access only registered users
  */
-// export const login = async(input: LoginInput) =>{
+export const login = async(input: LoginInput) =>{
 
-//     const {phone, password} = input;
+    const {phone, password} = input;
 
-//     const user = await db.query.users.findFirst({
-//         where:eq(users.phone, phone)
-//     })
-//     if(!user){
-//         throw new AppError(401, "Wrong phone or password");
-//     }
-    
+    const user = await db.query.users.findFirst({
+        where:eq(users.phone, phone),
+    })
+    if(!user){
+        throw new AppError(401, "Wrong phone number or password");
+    }
+    const isMatched = await comparePassword(password, user.passwordHash);
+    if(!isMatched){
+        throw new AppError(401, "Wrong phone number or password");
+    }
+    const {accessToken, refreshToken} = await createSession(user.id, user.role);
+    return {
+        user:{id:user.id, role:user.role, phone:user.phone, name:user.name},
+        accessToken,
+        refreshToken
+    }
 
-// }
+}
