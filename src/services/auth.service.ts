@@ -1,8 +1,14 @@
-import { and, eq, or, sql, lt } from "drizzle-orm";
+import { and, eq, or, sql, lt, gt } from "drizzle-orm";
 import { env, isProduction } from "../config/env";
 import { db } from "../db";
 import { nidRegistry, otps, refreshTokens, users } from "../db/schema";
-import { comparePassword, hashPassword, hmac, safeEqual, sha256 } from "../utils/hash";
+import {
+  comparePassword,
+  hashPassword,
+  hmac,
+  safeEqual,
+  sha256,
+} from "../utils/hash";
 import {
   generateRefreshToken,
   refreshTokenExpiryDate,
@@ -13,6 +19,7 @@ import { LoginInput, RegisterInput } from "../validators/auth.validators";
 import { AppError } from "../utils/AppError";
 import { generateOtp, otpExpiryDate } from "../utils/otp";
 import { sendSms } from "../utils/sms";
+import { date } from "zod";
 
 /**
  * @name otpMessage
@@ -238,25 +245,72 @@ export const resendOtp = async (verificationId: string) => {
  * @description Authenticates a registered user using their credentials and generates new access and refresh tokens.
  * @access only registered users
  */
-export const login = async(input: LoginInput) =>{
+export const login = async (input: LoginInput) => {
+  const { phone, password } = input;
 
-    const {phone, password} = input;
+  const user = await db.query.users.findFirst({
+    where: eq(users.phone, phone),
+  });
+  if (!user) {
+    throw new AppError(401, "Wrong phone number or password");
+  }
+  const isMatched = await comparePassword(password, user.passwordHash);
+  if (!isMatched) {
+    throw new AppError(401, "Wrong phone number or password");
+  }
+  const { accessToken, refreshToken } = await createSession(user.id, user.role);
+  return {
+    user: { id: user.id, role: user.role, phone: user.phone, name: user.name },
+    accessToken,
+    refreshToken,
+  };
+};
 
-    const user = await db.query.users.findFirst({
-        where:eq(users.phone, phone),
-    })
-    if(!user){
-        throw new AppError(401, "Wrong phone number or password");
-    }
-    const isMatched = await comparePassword(password, user.passwordHash);
-    if(!isMatched){
-        throw new AppError(401, "Wrong phone number or password");
-    }
-    const {accessToken, refreshToken} = await createSession(user.id, user.role);
-    return {
-        user:{id:user.id, role:user.role, phone:user.phone, name:user.name},
-        accessToken,
-        refreshToken
-    }
+/**
+ * @name logout
+ * @description log out logged in user, clear cookie and delete the refresh token
+ * @access public (works even with an expired access token).
+ */
+export const logout = async (refreshToken?: string) => {
+  if (!refreshToken) return;
+  await db
+    .delete(refreshTokens)
+    .where(eq(refreshTokens.tokenHash, sha256(refreshToken)));
+};
 
-}
+/**
+ * @name refresh
+ * @description Rotate the refresh token and issue a new access token.
+ *              Session has a fixed expiry: expiresAt is set at login and never extended.
+ * @access private users holding a valid refresh token
+ */
+export const refresh = async (oldToken?: string) => {
+  if (!oldToken) throw new AppError(401, "Not logged in");
+
+  const newToken = generateRefreshToken();
+
+  const [row] = await db
+    .update(refreshTokens)
+    .set({ tokenHash: sha256(newToken) })
+    .where(
+      and(
+        eq(refreshTokens.tokenHash, sha256(oldToken)),
+        gt(refreshTokens.expiresAt, new Date()),
+      ),
+    )
+    .returning({
+      userId: refreshTokens.userId,
+      expiresAt: refreshTokens.expiresAt,
+    });
+
+  if (!row) throw new AppError(401, "Session expired, please log in again");
+
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, row.userId),
+    columns: { id: true, role: true },
+  });
+
+  if (!user) throw new AppError(401, "Session expired, please log in again");
+  const accessToken = signAccessToken({ sub: user.id, role: user.role });
+  return { accessToken, refreshToken: newToken, expiresAt: row.expiresAt };
+};

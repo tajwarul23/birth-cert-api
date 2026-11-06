@@ -91,3 +91,33 @@ export const login = async(req: Request, res: Response) =>{
     });
 
 }
+
+//post /api/auth/logout
+export const logout = async(req: Request, res: Response)=>{
+    await authService.logout(req.cookies?.[COOKIE_NAMES.refresh]);
+    res.clearCookie(COOKIE_NAMES.access, accessCookieOption);
+    res.clearCookie(COOKIE_NAMES.refresh, refreshCookieOption);
+
+    res.status(200).json({success:true, message:"Logged out"});
+}
+
+// POST /api/auth/refresh
+export const refresh = async (req: Request, res: Response) => {
+  try {
+    const { accessToken, refreshToken, expiresAt } = await authService.refresh(
+      req.cookies?.[COOKIE_NAMES.refresh],
+    );
+
+    res.cookie(COOKIE_NAMES.access, accessToken, accessCookieOption);
+    res.cookie(COOKIE_NAMES.refresh, refreshToken, {
+      ...refreshCookieOption,
+      maxAge: expiresAt.getTime() - Date.now(),
+    });
+
+    res.status(200).json({ success: true, message: "Token refreshed" });
+  } catch (err) {
+    res.clearCookie(COOKIE_NAMES.access, accessCookieOption);
+    res.clearCookie(COOKIE_NAMES.refresh, refreshCookieOption);
+    throw err;
+  }
+};
