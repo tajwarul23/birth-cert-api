@@ -8,5 +8,6 @@ const router = Router();
 
 router.post("/new", authenticate, authorize("citizen"),uploadNewApplicationDocs, applicationController.createNew);
 router.post("/correction", authenticate, authorize("citizen"),uploadCorrectionDocs, applicationController.createCorrection);
+router.get("/me", authenticate, authorize("citizen"), applicationController.getMyApplications)
 
 export default router;

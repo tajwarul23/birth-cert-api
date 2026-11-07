@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db";
 import {
   applications,
@@ -288,4 +288,12 @@ export const createCorrection = async (
     }
     throw err;
   }
+};
+
+export const getMyApplications = async (userId: string) => {
+  return db.query.applications.findMany({
+    where: eq(applications.userId, userId),
+    orderBy: desc(applications.createdAt), // newest first
+    columns: { id: true, type: true, status: true, brn: true, formData: true, createdAt: true },
+  });
 };
