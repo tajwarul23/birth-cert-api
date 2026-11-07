@@ -8,7 +8,7 @@ export const searchCitizenSchema = z
     phone: phoneSchema.optional(),
   })
   .refine((query) => Boolean(query.nid) !== Boolean(query.phone), {
-    message: "Search with either NID or phone number, not both",
+    message: "Search with either NID or phone number",
   });
 
 export type searchCitizenQuery = z.infer<typeof searchCitizenSchema>;
