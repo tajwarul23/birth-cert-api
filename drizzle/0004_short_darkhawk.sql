@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "applications_new_child_unique" ON "applications" USING btree (("form_data"->'mother'->>'nid'),("form_data"->'child'->>'dateOfBirth'),(("form_data"->'child'->>'birthOrder')::int)) WHERE "applications"."type" = 'new' AND "applications"."status" IN ('pending', 'approved');

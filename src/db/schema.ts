@@ -8,6 +8,8 @@ import { text } from "drizzle-orm/pg-core";
 import { uuid } from "drizzle-orm/pg-core";
 import { pgTable } from "drizzle-orm/pg-core";
 import { pgEnum } from "drizzle-orm/pg-core";
+import { uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 
 /**-----------ENUMS----------------------- */
@@ -92,6 +94,14 @@ export const applications = pgTable(
       table.status,
       table.createdAt,
     ),
+    // one open/approved NEW application per child (mother NID + DOB + birth order)
+    uniqueIndex("applications_new_child_unique")
+      .on(
+        sql`(${table.formData}->'mother'->>'nid')`,
+        sql`(${table.formData}->'child'->>'dateOfBirth')`,
+        sql`((${table.formData}->'child'->>'birthOrder')::int)`,
+      )
+      .where(sql`${table.type} = 'new' AND ${table.status} IN ('pending', 'approved')`),
   ],
 );
 

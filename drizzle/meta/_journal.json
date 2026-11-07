@@ -29,6 +29,13 @@
       "when": 1793889031724,
       "tag": "0003_optimal_omega_flight",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794038977708,
+      "tag": "0004_short_darkhawk",
+      "breakpoints": true
     }
   ]
 }

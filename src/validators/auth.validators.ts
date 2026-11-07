@@ -1,21 +1,20 @@
 import { z } from "zod";
-import { passwordSchema, phoneSchema } from "./common";
+import { passwordSchema, phoneSchema, todayInBd } from "./common";
 
-const yearsAgo = (years: number) => {
-  const date = new Date();
-  date.setUTCFullYear(date.getUTCFullYear() - years);
-  return date.toISOString().slice(0, 10);
+export const yearsAgoInBd = (years: number) => {
+  const [year, month, day] = todayInBd().split("-");
+  return `${Number(year) - years}-${month}-${day}`;
 };
-const nidSchema = z
+export const nidSchema = z
   .string()
   .regex(/^(\d{10}|\d{13}|\d{17})$/, "NID must be 10, 13 or 17 digits");
 
 const dobSchema = z.iso
   .date({ error: "Date of birth must look like YYYY-MM-DD", abort: true })
-  .refine((date) => date >= yearsAgo(150), {
+  .refine((date) => date >= yearsAgoInBd(150), {
     message: "Date of birth is too far in the past",
   })
-  .refine((date) => date <= yearsAgo(18), {
+  .refine((date) => date <= yearsAgoInBd(18), {
     message: "You must be at least 18 years old",
   });
 

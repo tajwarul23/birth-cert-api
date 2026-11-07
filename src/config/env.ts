@@ -15,6 +15,12 @@ const envSchema = z.object({
   OTP_EXPIRY_MINUTES: z.coerce.number().int().positive().default(5),
   OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
   OTP_RESEND_COOLDOWN_SECONDS: z.coerce.number().int().positive().default(60),
+  CLOUDINARY_URL: z
+    .string()
+    .startsWith(
+      "cloudinary://",
+      "CLOUDINARY_URL must start with cloudinary://",
+    ),
 });
 
 export const env = envSchema.parse(process.env);

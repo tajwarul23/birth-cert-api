@@ -2,6 +2,8 @@ import type { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
 import { AppError } from "../utils/AppError";
 import { isProduction } from "../config/env";
+import { MulterError } from "multer";
+import { MAX_FILE_SIZE_MB } from "./upload";
  
 // Unknown route 
 export const notFound = (req: Request, _res: Response, next: NextFunction) => {
@@ -41,6 +43,16 @@ export const errorHandler = (err: unknown, req: Request, res: Response, next: Ne
   if (err instanceof SyntaxError && "body" in err) {
     return res.status(400).json({ success: false, message: "Invalid JSON body", errors: null });
   }
+
+  // Upload errors from Multer (too big, too many files, unknown field)
+if (err instanceof MulterError) {
+  const messages: Partial<Record<MulterError["code"], string>> = {
+    LIMIT_FILE_SIZE: `File too large, max ${MAX_FILE_SIZE_MB} MB`,
+    LIMIT_FILE_COUNT: "Too many files",
+    LIMIT_UNEXPECTED_FILE: `Unexpected file field: ${err.field}`,
+  };
+  return res.status(400).json({ success: false, message: messages[err.code] ?? err.message, errors: null });
+}
 
     if (
     err instanceof Error &&

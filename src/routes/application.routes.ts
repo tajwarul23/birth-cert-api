@@ -1,0 +1,11 @@
+import { Router } from "express";
+import { authenticate } from "../middlewares/authenticate";
+import { authorize } from "../middlewares/authorize";
+import { uploadNewApplicationDocs } from "../middlewares/upload";
+import * as applicationController from "../controllers/application.controller";
+
+const router = Router();
+
+router.post("/new", authenticate, authorize("citizen"),uploadNewApplicationDocs, applicationController.createNew);
+
+export default router;

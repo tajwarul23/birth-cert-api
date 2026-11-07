@@ -15,3 +15,6 @@ export const passwordSchema = z
   .regex(/[0-9]/, "Password needs a number")
   .regex(/[^A-Za-z0-9]/, "Password needs a special character");
 
+
+  export const todayInBd = () =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dhaka" }).format(new Date());
