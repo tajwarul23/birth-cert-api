@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "applications_pending_correction_unique" ON "applications" USING btree (("form_data"->>'brn')) WHERE "applications"."type" = 'correction' AND "applications"."status" = 'pending';

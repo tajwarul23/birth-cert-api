@@ -102,6 +102,10 @@ export const applications = pgTable(
         sql`((${table.formData}->'child'->>'birthOrder')::int)`,
       )
       .where(sql`${table.type} = 'new' AND ${table.status} IN ('pending', 'approved')`),
+    // one pending correction per certificate (BRN)
+    uniqueIndex("applications_pending_correction_unique")
+      .on(sql`(${table.formData}->>'brn')`)
+      .where(sql`${table.type} = 'correction' AND ${table.status} = 'pending'`),
   ],
 );
 
