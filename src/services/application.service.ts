@@ -17,18 +17,34 @@ import {
 import type {
   CorrectionForm,
   NewApplicationForm,
+  updateStatusInput,
 } from "../validators/application.validators";
 import { hmac } from "../utils/hash";
+import { Role } from "../utils/token";
+import { asc } from "drizzle-orm";
+import { randomInt } from "node:crypto";
 
 // What Multer gives us: { birth_proof: [file], address_proof: [file] }
 export type UploadedFiles = Record<string, Express.Multer.File[]>;
 
 type UploadedDoc = UploadedFile & { docType: string };
 
+// what a correction row stores in form_data
+type CorrectionFormData = {
+  brn: string;
+  reason: string;
+  originalApplicationId: string;
+};
+
+// a form split into sections: { child: {...}, father: {...}, ... }
+type FormSections = Record<string, Record<string, unknown>>;
+
 const DUPLICATE_CHILD_MESSAGE =
   "An application for this child is already pending or approved";
-const BRN_NOT_FOUND_MESSAGE = "No approved birth certificate found with this BRN";
-const PENDING_CORRECTION_MESSAGE = "A correction for this certificate is already pending";
+const BRN_NOT_FOUND_MESSAGE =
+  "No approved birth certificate found with this BRN";
+const PENDING_CORRECTION_MESSAGE =
+  "A correction for this certificate is already pending";
 
 // Postgres unique_violation. Drizzle wraps driver errors, so the pg error may sit on `cause`.
 const isUniqueViolation = (err: unknown) => {
@@ -294,6 +310,162 @@ export const getMyApplications = async (userId: string) => {
   return db.query.applications.findMany({
     where: eq(applications.userId, userId),
     orderBy: desc(applications.createdAt), // newest first
-    columns: { id: true, type: true, status: true, brn: true, formData: true, createdAt: true },
+    columns: {
+      id: true,
+      type: true,
+      status: true,
+      brn: true,
+      formData: true,
+      createdAt: true,
+    },
+  });
+};
+
+export const getApplicationDetailsById = async (
+  user: { id: string; role: Role },
+  applicationId: string,
+) => {
+  const application = await db.query.applications.findFirst({
+    where: eq(applications.id, applicationId),
+  });
+
+  if (
+    !application ||
+    (user.role === "citizen" && application?.userId !== user.id)
+  )
+    throw new AppError(404, "Application not found");
+
+  const [history, docs, correctionItem] = await Promise.all([
+    db
+      .select({
+        id: statusLogs.id,
+        oldStatus: statusLogs.oldStatus,
+        newStatus: statusLogs.newStatus,
+        note: statusLogs.note,
+        createdAt: statusLogs.createdAt,
+        changedByName: users.name,
+        changedByRole: users.role,
+      })
+      .from(statusLogs)
+      .innerJoin(users, eq(users.id, statusLogs.changedBy))
+      .where(eq(statusLogs.applicationId, applicationId))
+      .orderBy(asc(statusLogs.createdAt)),
+
+    db.query.documents.findMany({
+      where: eq(documents.applicationId, applicationId),
+    }),
+
+    db.query.correctionItems.findMany({
+      where: eq(correctionItems.applicationId, applicationId),
+    }),
+  ]);
+
+  return {
+    ...application,
+    documents: docs,
+    correctionItems: correctionItem,
+    history,
+  };
+};
+
+const generateBrn = () => {
+  const year = new Date().getFullYear().toString();
+  const random = randomInt(0, 10 ** 13)
+    .toString()
+    .padStart(13, "0");
+  return random + year;
+};
+export const updateApplicationStatus = async (
+  applicationId: string,
+  operatorId: string,
+  input: updateStatusInput,
+) => {
+  const application = await db.query.applications.findFirst({
+    where: eq(applications.id, applicationId),
+  });
+  if (!application) throw new AppError(404, "Application not found");
+  if (application.status !== "pending") {
+    throw new AppError(
+      409,
+      `This application has already been ${application.status}.`,
+    );
+  }
+
+  return db.transaction(async (tx) => {
+    //update the application and statusLogs
+    const [updated] = await tx
+      .update(applications)
+      .set(
+        input.status === "approved"
+          ? {
+              status: "approved",
+              brn: application.type === "new" ? generateBrn() : null,
+            }
+          : { status: "rejected", rejectionReason: input.reason },
+      )
+      .where(
+        and(
+          eq(applications.id, applicationId),
+          eq(applications.status, "pending"),
+        ),
+      )
+      .returning();
+
+    if (!updated)
+      throw new AppError(
+        409,
+        "Application was already reviewed by another operator",
+      );
+
+    await tx.insert(statusLogs).values({
+      applicationId,
+      oldStatus: "pending",
+      newStatus: input.status,
+      changedBy: operatorId,
+      note: input.status === "rejected" ? input.reason : "Application approved",
+    });
+
+    //for correction-application, update the old application form data too
+    if (input.status === "approved" && application.type === "correction") {
+      // 1. Find the original application this correction is for
+      const correctionData = application.formData as CorrectionFormData;
+      const originalId = correctionData.originalApplicationId;
+
+      const original = await tx.query.applications.findFirst({
+        where: eq(applications.id, originalId),
+      });
+      if (!original) throw new AppError(404, "Original application not found");
+
+      // 2. Get the fields to change
+      const items = await tx.query.correctionItems.findMany({
+        where: eq(correctionItems.applicationId, applicationId),
+      });
+
+      // 3. Copy the original form, then put in the new values
+      const newFormData: FormSections = JSON.parse(
+        JSON.stringify(original.formData),
+      );
+      for (const item of items) {
+        const [section, key] = item.field.split("."); // "child.nameEn" → "child", "nameEn"
+        newFormData[section][key] = item.newValue;
+      }
+
+      // 4. Save the new form on the original
+      await tx
+        .update(applications)
+        .set({ formData: newFormData })
+        .where(eq(applications.id, original.id));
+
+      // 5. Add a log on the original so its history shows the correction
+      await tx.insert(statusLogs).values({
+        applicationId: original.id,
+        oldStatus: "approved",
+        newStatus: "approved",
+        changedBy: operatorId,
+        note: `Corrected: ${items.map((item) => item.field).join(", ")}`,
+      });
+    }
+
+    return updated;
   });
 };

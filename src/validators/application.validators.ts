@@ -4,7 +4,9 @@ import { checkAddress } from "../utils/geo";
 
 // current date in Bangladesh (UTC+6) as YYYY-MM-DD
 const today = () =>
-  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dhaka" }).format(new Date());
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dhaka" }).format(
+    new Date(),
+  );
 
 const nameBn = z
   .string()
@@ -20,7 +22,10 @@ const nameEn = z
   .trim()
   .min(1, "English name is required")
   .max(100)
-  .regex(/^[A-Za-z .'-]+$/, "English name can only have letters, spaces, . ' -");
+  .regex(
+    /^[A-Za-z .'-]+$/,
+    "English name can only have letters, spaces, . ' -",
+  );
 
 const childDob = z.iso
   .date({ error: "Date of birth must look like YYYY-MM-DD", abort: true })
@@ -36,48 +41,62 @@ const addressSchema = z
     district: z.string().trim().min(1, "District is required"),
     upazila: z.string().trim().min(1, "Upazila is required"),
     areaType: z.enum(["union", "city_corporation", "municipality"]),
-    areaName: z.string().trim().min(1).max(100), 
+    areaName: z.string().trim().min(1).max(100),
     ward: z.coerce.number().int().min(1).max(99),
     postOffice: z.string().trim().min(1).max(100),
     postCode: z.string().regex(/^\d{4}$/, "Post code must be 4 digits"),
     addressLine,
   })
-  
+
   .superRefine((address, ctx) => {
-    const result = checkAddress(address.division, address.district, address.upazila);
+    const result = checkAddress(
+      address.division,
+      address.district,
+      address.upazila,
+    );
     if (!result.ok) {
-      ctx.addIssue({ code: "custom", path: [result.field], message: result.message });
+      ctx.addIssue({
+        code: "custom",
+        path: [result.field],
+        message: result.message,
+      });
     }
   });
 
 const parentSchema = z.object({
-    nameBn,
-    nameEn,
-    nid:nidSchema,
-    nationality: z.enum(["Bangladeshi"], {error:"Only Bangladeshi nationality is supported for now"}).default("Bangladeshi")
+  nameBn,
+  nameEn,
+  nid: nidSchema,
+  nationality: z
+    .enum(["Bangladeshi"], {
+      error: "Only Bangladeshi nationality is supported for now",
+    })
+    .default("Bangladeshi"),
 });
 
 //New application: Form data
-export const newApplicationFormSchema = z.object({
-  child: z.object({
-    nameBn,
-    nameEn,
-    dateOfBirth: childDob,
-    gender,
-    birthOrder: z.coerce.number().int().min(1).max(20), // 1st child, 2nd child...
-  }),
-  birthPlace: z.object({
-    type: z.enum(["hospital", "home", "other"]),
-    details: z.string().trim().min(1).max(200), // hospital name + address, or home address
-  }),
-  father: parentSchema,
-  mother: parentSchema,
-  permanentAddress: addressSchema,
-  presentAddress: addressSchema.optional(), // empty = same as permanent
-}).refine((form) => form.father.nid !== form.mother.nid, {
-  path: ["mother", "nid"],
-  message: "Father and mother can't have the same NID",
-});
+export const newApplicationFormSchema = z
+  .object({
+    child: z.object({
+      nameBn,
+      nameEn,
+      dateOfBirth: childDob,
+      gender,
+      birthOrder: z.coerce.number().int().min(1).max(20), // 1st child, 2nd child...
+    }),
+    birthPlace: z.object({
+      type: z.enum(["hospital", "home", "other"]),
+      details: z.string().trim().min(1).max(200), // hospital name + address, or home address
+    }),
+    father: parentSchema,
+    mother: parentSchema,
+    permanentAddress: addressSchema,
+    presentAddress: addressSchema.optional(), // empty = same as permanent
+  })
+  .refine((form) => form.father.nid !== form.mother.nid, {
+    path: ["mother", "nid"],
+    message: "Father and mother can't have the same NID",
+  });
 
 //correction: each field validates newValue with the same rules as the new application form.
 //oldValue is NOT taken from the client; the service reads the current value from the DB by brn.
@@ -90,7 +109,10 @@ const correctionItem = z.discriminatedUnion("field", [
   z.object({ field: z.literal("father.nameEn"), newValue: nameEn }),
   z.object({ field: z.literal("mother.nameBn"), newValue: nameBn }),
   z.object({ field: z.literal("mother.nameEn"), newValue: nameEn }),
-  z.object({ field: z.literal("permanentAddress.addressLine"), newValue: addressLine }),
+  z.object({
+    field: z.literal("permanentAddress.addressLine"),
+    newValue: addressLine,
+  }),
 ]);
 
 export type CorrectionItem = z.infer<typeof correctionItem>;
@@ -100,8 +122,14 @@ export const CORRECTABLE_FIELDS = correctionItem.options.map(
 ) as CorrectableField[];
 
 export const correctionFormSchema = z.object({
-  brn: z.string().regex(/^\d{17}$/, "Birth Registration Number must be 17 digits"),
-  reason: z.string().trim().min(10, "Explain the reason in at least 10 characters").max(500),
+  brn: z
+    .string()
+    .regex(/^\d{17}$/, "Birth Registration Number must be 17 digits"),
+  reason: z
+    .string()
+    .trim()
+    .min(10, "Explain the reason in at least 10 characters")
+    .max(500),
   items: z
     .array(correctionItem)
     .min(1, "At least one field to correct")
@@ -111,5 +139,17 @@ export const correctionFormSchema = z.object({
     ),
 });
 
+export const updateStatusSchema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("approved") }),
+  z.object({
+    status: z.literal("rejected"),
+    reason: z
+      .string()
+      .trim()
+      .min(10, "Reason must be at least 10 characters")
+      .max(500),
+  }),
+]);
 export type NewApplicationForm = z.infer<typeof newApplicationFormSchema>;
 export type CorrectionForm = z.infer<typeof correctionFormSchema>;
+export type updateStatusInput = z.infer<typeof updateStatusSchema>

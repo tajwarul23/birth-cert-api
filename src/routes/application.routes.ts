@@ -8,6 +8,8 @@ const router = Router();
 
 router.post("/new", authenticate, authorize("citizen"),uploadNewApplicationDocs, applicationController.createNew);
 router.post("/correction", authenticate, authorize("citizen"),uploadCorrectionDocs, applicationController.createCorrection);
-router.get("/me", authenticate, authorize("citizen"), applicationController.getMyApplications)
+router.get("/me", authenticate, authorize("citizen"), applicationController.getMyApplications);
+router.get("/:applicationId", authenticate, authorize("citizen", "operator"), applicationController.getApplicationDetailsById);
+router.patch("/:applicationId/status", authenticate, authorize("operator"), applicationController.updateStatus);
 
 export default router;
