@@ -27,7 +27,7 @@ export const openapiSpec = {
       "MVP for new birth certificate applications and corrections.\n\n" +
       "**How to try it:** call `POST /api/auth/login` first. The server sets HttpOnly cookies, " +
       "and your browser sends them automatically on the next requests.\n\n" +
-      "Test operator: `+8801700000000` / `Operator@123`. OTP is mocked: register and resend-otp return it in `data.otp` (MVP demonstration only).",
+      "Test operator: `+8801787573220` / `Operator@123`. OTP is mocked: register and resend-otp return it in `data.otp` (MVP demonstration only).",
 
   },
   servers: [{ url: "/" }],
@@ -216,7 +216,7 @@ export const openapiSpec = {
                 type: "object",
                 required: ["phone", "password"],
                 properties: {
-                  phone: { type: "string", example: "+8801700000000" },
+                  phone: { type: "string", example: "+8801787573220" },
                   password: { type: "string", example: "Operator@123" },
                 },
               },

@@ -19,14 +19,15 @@ The service runs on Render's free plan and sleeps when idle, so the first reques
 
 | Phone | Password |
 |---|---|
-| `+8801700000000` | `Operator@123` |
+| `+8801787573220` | `Operator@123` |
 
-**Citizens:** register one yourself using a record from the mock NID registry ([src/db/mock_data.ts](src/db/mock_data.ts)). For example:
+**Citizens:** register one yourself using a record from the mock NID registry ([src/db/mock_data.ts](src/db/mock_data.ts)). Register as **Ayesha Begum**: the sample application below uses her as the mother.
 
 | Name | NID | Date of birth | Phone |
 |---|---|---|---|
-| Rahim Uddin | `1990123456789` | `1990-05-14` | `+8801711111111` |
 | Ayesha Begum | `1992987654321` | `1992-08-02` | `+8801722222222` |
+
+The child's father in the sample, Rahim Uddin (`1990123456789`), already has an account. Each NID can register only once, so pick a different record if Ayesha Begum is already taken.
 
 The NID, date of birth and phone must match the registry exactly. The password must be at least 8 characters with an uppercase letter, a lowercase letter, a number and a special character, such as `Citizen@123`.
 
@@ -200,7 +201,7 @@ HMAC_SECRET=<at least 32 random characters>
 CLOUDINARY_URL=cloudinary://<api_key>:<api_secret>@<cloud_name>
 
 # Used only by the seed script
-SEED_OPERATOR_PHONE=+8801700000000
+SEED_OPERATOR_PHONE=+8801787573220
 SEED_OPERATOR_PASSWORD=Operator@123
 
 # Optional (defaults shown)
