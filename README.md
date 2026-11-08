@@ -21,15 +21,29 @@ The service runs on Render's free plan and sleeps when idle, so the first reques
 |---|---|
 | `+8801787573220` | `Operator@123` |
 
-**Citizens:** register one yourself using a record from the mock NID registry ([src/db/mock_data.ts](src/db/mock_data.ts)). Register as **Ayesha Begum**: the sample application below uses her as the mother.
+**Citizens:** register one yourself using a record from the mock NID registry ([src/db/mock_data.ts](src/db/mock_data.ts)). There are no ready-made citizen accounts.
+
+Use these records to test registration. The NID, date of birth and phone must all match the registry, or registration returns `400 NID details don't match our records`.
 
 | Name | NID | Date of birth | Phone |
 |---|---|---|---|
-| Ayesha Begum | `1992987654321` | `1992-08-02` | `+8801722222222` |
+| Mohammad Hasan | `1995123456781` | `1995-06-12` | `+8801761111111` |
+| Sadia Rahman | `1998123456784` | `1998-12-05` | `+8801794444444` |
+| Nusrat Jahan | `1987123456782` | `1987-09-25` | `+8801772222222` |
+| Kamrul Islam | `1975123456783` | `1975-02-18` | `+8801783333333` |
+| Mahmud Hasan | `1980123456785` | `1980-04-22` | `+8801815555555` |
+| Abdur Rahman | `1978123456787` | `1978-10-11` | `+8801837777777` |
+| Jannatul Ferdous | `1993123456788` | `1993-03-08` | `+8801848888888` |
+| Shahidul Islam | `1985123456792` | `1985-08-14` | `+8801872222222` |
+| Sharmin Sultana | `1996123456793` | `1996-11-27` | `+8801883333333` |
+| Arif Hossain | `1994123456798` | `1994-07-23` | `+8801938888888` |
 
-The child's father in the sample, Rahim Uddin (`1990123456789`), already has an account. Each NID can register only once, so pick a different record if Ayesha Begum is already taken.
+- Each NID can register only once. A second attempt returns `409 An account already exists`, so pick another row.
+- **Mohammad Hasan** and **Sadia Rahman** are the father and mother in the sample application below. Register as one of them to submit it.
+- The password must be at least 8 characters with an uppercase letter, a lowercase letter, a number and a special character, such as `Citizen@123`.
+- Registration also requires the person to be at least 18. Every record above qualifies.
 
-The NID, date of birth and phone must match the registry exactly. The password must be at least 8 characters with an uppercase letter, a lowercase letter, a number and a special character, such as `Citizen@123`.
+To test a failed registration, change the date of birth or phone on any row. To test a duplicate, register the same row twice.
 
 ### Walkthrough in Swagger
 
@@ -37,7 +51,7 @@ Authentication uses HttpOnly cookies, so once you log in, Swagger sends the cook
 
 **As a citizen**
 
-1. `POST /api/auth/register` with one of the NID records above. The OTP is mocked: **for the MVP demonstration, it is returned in the response as `data.otp`**.
+1. `POST /api/auth/register` with one of the NID records above (Mohammad Hasan or Sadia Rahman if you want to submit the sample application). The OTP is mocked: **for the MVP demonstration, it is returned in the response as `data.otp`**.
 2. `POST /api/auth/verify-otp` with `{ "otp": "<code>" }`. This creates the account and logs you in.
 3. `POST /api/applications/new`. Put the form below in the `data` field and attach a PDF, JPEG or PNG (max 2 MB) for `birth_proof` and `address_proof`. You must be the child's father or mother.
 
@@ -47,8 +61,8 @@ Authentication uses HttpOnly cookies, so once you log in, Swagger sends the cook
    ```json
    {
      "child": {
-       "nameBn": "তাসনিম উদ্দিন",
-       "nameEn": "Tasnim Uddin",
+       "nameBn": "আরিয়ান হাসান",
+       "nameEn": "Ariyan Hasan",
        "dateOfBirth": "2025-01-10",
        "gender": "female",
        "birthOrder": 1
@@ -57,8 +71,8 @@ Authentication uses HttpOnly cookies, so once you log in, Swagger sends the cook
        "type": "hospital",
        "details": "Dhaka Medical College Hospital, Bakshibazar, Dhaka"
      },
-     "father": { "nameBn": "রহিম উদ্দিন", "nameEn": "Rahim Uddin", "nid": "1990123456789" },
-     "mother": { "nameBn": "আয়েশা বেগম", "nameEn": "Ayesha Begum", "nid": "1992987654321" },
+     "father": { "nameBn": "মোহাম্মদ হাসান", "nameEn": "Mohammad Hasan", "nid": "1995123456781" },
+     "mother": { "nameBn": "সাদিয়া রহমান", "nameEn": "Sadia Rahman", "nid": "1998123456784" },
      "permanentAddress": {
        "division": "Dhaka",
        "district": "Dhaka",

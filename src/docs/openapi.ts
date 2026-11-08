@@ -156,21 +156,21 @@ export const openapiSpec = {
                 type: "object",
                 required: ["nid", "dob", "phone", "password"],
                 properties: {
-                  nid: { type: "string", example: "1992987654321" },
-                  dob: { type: "string", format: "date", example: "1992-08-02" },
-                  phone: { type: "string", example: "+8801722222222" },
+                  nid: { type: "string", example: "1995123456781" },
+                  dob: { type: "string", format: "date", example: "1995-06-12" },
+                  phone: { type: "string", example: "+8801761111111" },
                   password: { type: "string", example: "Citizen@123" },
                 },
               },
               // Each NID can register only once. If one is taken (409), pick another.
               examples: {
-                ayeshaBegum: {
-                  summary: "Ayesha Begum (mother in the sample application)",
-                  value: { nid: "1992987654321", dob: "1992-08-02", phone: "+8801722222222", password: "Citizen@123" },
-                },
                 mohammadHasan: {
-                  summary: "Mohammad Hasan",
+                  summary: "Mohammad Hasan (father in the README sample application)",
                   value: { nid: "1995123456781", dob: "1995-06-12", phone: "+8801761111111", password: "Citizen@123" },
+                },
+                sadiaRahman: {
+                  summary: "Sadia Rahman (mother in the README sample application)",
+                  value: { nid: "1998123456784", dob: "1998-12-05", phone: "+8801794444444", password: "Citizen@123" },
                 },
                 nusratJahan: {
                   summary: "Nusrat Jahan",
