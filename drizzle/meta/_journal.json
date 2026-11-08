@@ -43,6 +43,13 @@
       "when": 1794044147884,
       "tag": "0005_certain_diamondback",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794117198438,
+      "tag": "0006_striped_leader",
+      "breakpoints": true
     }
   ]
 }

@@ -11,5 +11,5 @@ router.post("/correction", authenticate, authorize("citizen"),uploadCorrectionDo
 router.get("/me", authenticate, authorize("citizen"), applicationController.getMyApplications);
 router.get("/:applicationId", authenticate, authorize("citizen", "operator"), applicationController.getApplicationDetailsById);
 router.patch("/:applicationId/status", authenticate, authorize("operator"), applicationController.updateStatus);
-
+router.get("/", authenticate, authorize("operator"), applicationController.listApplications);
 export default router;

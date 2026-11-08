@@ -2,12 +2,14 @@ import { Request, Response } from "express";
 import { AppError } from "../utils/AppError";
 import {
   correctionFormSchema,
+  listApplicationSchema,
   newApplicationFormSchema,
   updateStatusSchema,
 } from "../validators/application.validators";
 import { UploadedFiles } from "../services/application.service";
 import * as applicationService from "../services/application.service";
 import { z } from "zod";
+
 
 export const createNew = async (req: Request, res: Response) => {
   let data: unknown;
@@ -105,5 +107,14 @@ export const updateStatus = async (req: Request, res: Response) => {
     success: true,
     message: `Application ${input.status}`,
     data: application,
+  });
+};
+
+export const listApplications = async (req: Request, res: Response) => {
+  const query = listApplicationSchema.parse(req.query);
+  const result = await applicationService.listApplications(query);
+  res.status(200).json({
+    success: true,
+    data: result,
   });
 };

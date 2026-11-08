@@ -150,6 +150,14 @@ export const updateStatusSchema = z.discriminatedUnion("status", [
       .max(500),
   }),
 ]);
+
+export const listApplicationSchema = z.object({
+  status: z.enum(["pending", "approved", "rejected"]).optional(),
+  type: z.enum(["new", "correction"]).optional(),
+  cursor: z.uuid("Invalid Cursor").optional(),
+  limit: z.coerce.number().int().min(1).max(20).default(10)
+})
 export type NewApplicationForm = z.infer<typeof newApplicationFormSchema>;
 export type CorrectionForm = z.infer<typeof correctionFormSchema>;
-export type updateStatusInput = z.infer<typeof updateStatusSchema>
+export type updateStatusInput = z.infer<typeof updateStatusSchema>;
+export type listApplicationQuery = z.infer<typeof listApplicationSchema>;

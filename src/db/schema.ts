@@ -11,7 +11,6 @@ import { pgEnum } from "drizzle-orm/pg-core";
 import { uniqueIndex } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
-
 /**-----------ENUMS----------------------- */
 export const roleEnum = pgEnum("role", ["citizen", "operator"]);
 export const applicationTypeEnum = pgEnum("application_type", [
@@ -90,10 +89,12 @@ export const applications = pgTable(
   },
   (table) => [
     index("applications_user_id_idx").on(table.userId),
-    index("applications_status_created_at_idx").on(
+    index("applications_status_created_at_id_idx").on(
       table.status,
       table.createdAt,
+      table.id,
     ),
+    index("applications_created_at_id_idx").on(table.createdAt, table.id),
     // one open/approved NEW application per child (mother NID + DOB + birth order)
     uniqueIndex("applications_new_child_unique")
       .on(
@@ -101,7 +102,9 @@ export const applications = pgTable(
         sql`(${table.formData}->'child'->>'dateOfBirth')`,
         sql`((${table.formData}->'child'->>'birthOrder')::int)`,
       )
-      .where(sql`${table.type} = 'new' AND ${table.status} IN ('pending', 'approved')`),
+      .where(
+        sql`${table.type} = 'new' AND ${table.status} IN ('pending', 'approved')`,
+      ),
     // one pending correction per certificate (BRN)
     uniqueIndex("applications_pending_correction_unique")
       .on(sql`(${table.formData}->>'brn')`)

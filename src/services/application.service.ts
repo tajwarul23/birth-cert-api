@@ -16,6 +16,7 @@ import {
 } from "../utils/storage";
 import type {
   CorrectionForm,
+  listApplicationQuery,
   NewApplicationForm,
   updateStatusInput,
 } from "../validators/application.validators";
@@ -468,4 +469,48 @@ export const updateApplicationStatus = async (
 
     return updated;
   });
+};
+
+export const listApplications = async (query: listApplicationQuery) => {
+  const filters = and(
+    query.status ? eq(applications.status, query.status) : undefined,
+    query.type ? eq(applications.type, query.type) : undefined,
+  );
+
+  if (query.cursor) {
+    const cursorRow = await db.query.applications.findFirst({
+      where: eq(applications.id, query.cursor),
+      columns: { id: true },
+    });
+    if (!cursorRow) throw new AppError(400, "Invalid cursor");
+  }
+
+  const afterCursor = query.cursor
+    ? sql`(${applications.createdAt}, ${applications.id}) > (select created_at, id from applications where id = ${query.cursor})`
+    : undefined;
+
+  const [total, rows] = await Promise.all([
+    db.$count(applications, filters),
+    db.query.applications.findMany({
+      where: and(filters, afterCursor),
+      orderBy: [asc(applications.createdAt), asc(applications.id)],
+      limit: query.limit + 1,
+      columns: {
+        id: true,
+        type: true,
+        status: true,
+        brn: true,
+        createdAt: true,
+      },
+    }),
+  ]);
+
+  const hasMore = rows.length > query.limit;
+  const pageRows = hasMore ? rows.slice(0, query.limit) : rows;
+
+  return {
+    total,
+    applications: pageRows,
+    nextCursor: hasMore ? pageRows[pageRows.length - 1].id : null,
+  };
 };
