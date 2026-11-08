@@ -118,7 +118,7 @@ export const register = async (input: RegisterInput) => {
   await sendSms(record.phone, otpMessage(otp));
 
   //the controller will set the cookie for otp
-  return { verificationId: pending.id, ...(isProduction ? {} : { otp }) };
+  return { verificationId: pending.id, otp };
 };
 
 /**
@@ -237,7 +237,7 @@ export const resendOtp = async (verificationId: string) => {
     .where(eq(otps.id, pending.id));
 
   await sendSms(pending.phone, otpMessage(otp));
-  return { ...(isProduction ? {} : { otp }) };
+  return { otp };
 };
 
 /**
@@ -330,4 +330,3 @@ export const getMe = async (userId: string) => {
   if (!user) throw new AppError(404, "User not found");
   return user;
 };
-
