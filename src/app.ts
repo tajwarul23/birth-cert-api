@@ -4,12 +4,14 @@ import cookieParser from "cookie-parser";
 import routes from "./routes";
 import helmet from "helmet";
 import { apiLimiter } from "./middlewares/rateLimit";
-
+import swaggerUi from "swagger-ui-express";
+import { openapiSpec } from "./docs/openapi";
 
 const app = express();
 
 app.set("trust proxy", 1);
 app.use(helmet());
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(openapiSpec));
 app.use(express.json({limit:"100kb"}));
 app.use(cookieParser());
 

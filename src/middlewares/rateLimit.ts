@@ -2,7 +2,7 @@ import rateLimit from "express-rate-limit"
 
 const makeLimiter = (limit: number, minutes: number) =>{
     return rateLimit({
-        windowMs: 60 * 1000,
+        windowMs: minutes * 60 * 1000,
         limit,
         standardHeaders:"draft-7",
         legacyHeaders:false,

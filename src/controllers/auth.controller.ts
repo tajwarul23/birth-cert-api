@@ -42,8 +42,8 @@ export const register = async (req: Request, res: Response) => {
   );
   res.status(201).json({
     success: true,
-    message: "OTP sent to the phone on your NID record. It expires in 5 minutes.",
-    data: isProduction ? {} : { otp: otp },
+    message: "OTP sent (mock). For MVP demonstration only, the OTP is returned in the response.",
+     data: { otp },
   });
 };
 
@@ -75,8 +75,8 @@ export const resendOtp = async (req: Request, res: Response) => {
   );
   res.status(200).json({
     success: true,
-    message: "A new OTP was sent",
-    data: isProduction ? {} : { otp: otp },
+    message: "OTP sent (mock). For MVP demonstration only, the OTP is returned in the response.",
+     data: { otp },
   });
 };
 
