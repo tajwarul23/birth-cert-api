@@ -10,6 +10,8 @@ const upload = multer({
   limits: {
     fileSize: MAX_FILE_SIZE_MB * 1024 * 1024, // bytes
     files: 2,
+    fields:1, //only "data" text field is allowed
+    fieldSize: 100 * 1024, // the "data" JSON field
   },
   fileFilter: (_req, file, cb) => {
     if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {

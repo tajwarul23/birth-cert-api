@@ -7,13 +7,34 @@ import {
   verifyOtpSchema,
 } from "../validators/auth.validators";
 import { authenticate } from "../middlewares/authenticate";
+import {
+  loginLimiter,
+  registerLimiter,
+  resendOtpLimiter,
+  verifyOtpLimiter,
+} from "../middlewares/rateLimit";
 
 const router = Router();
 
-router.post("/register", validate(registerSchema), authController.register);
-router.post("/verify-otp", validate(verifyOtpSchema), authController.verifyOtp);
-router.post("/resend-otp", authController.resendOtp);
-router.post("/login", validate(loginSchema), authController.login);
+router.post(
+  "/register",
+  registerLimiter,
+  validate(registerSchema),
+  authController.register,
+);
+router.post(
+  "/verify-otp",
+  verifyOtpLimiter,
+  validate(verifyOtpSchema),
+  authController.verifyOtp,
+);
+router.post("/resend-otp", resendOtpLimiter, authController.resendOtp);
+router.post(
+  "/login",
+  loginLimiter,
+  validate(loginSchema),
+  authController.login,
+);
 router.post("/logout", authController.logout);
 router.post("/refresh", authController.refresh);
 router.get("/me", authenticate, authController.getMe);
